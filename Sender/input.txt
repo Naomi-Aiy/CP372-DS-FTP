@@ -1,0 +1,23 @@
+This is a demonstration of a reliable file transfer protocol implemented in Java.
+
+The sender divides a file into multiple packets and sends them to the receiver using UDP.
+Since UDP does not guarantee delivery, the sender must wait for acknowledgements (ACKs)
+from the receiver to ensure each packet is successfully received.
+
+If an ACK is lost or dropped, the sender detects a timeout and retransmits the packet.
+This allows the protocol to simulate reliable data transfer even over an unreliable network.
+
+During this demonstration, some ACK packets are intentionally dropped to simulate
+network packet loss. The sender then retransmits the missing packets until the
+receiver successfully reconstructs the complete file.
+
+At the end of the transmission, the receiver writes the reconstructed data into
+an output file called output.txt.
+
+This project demonstrates concepts such as:
+- Sliding window protocols
+- Packet retransmission
+- Timeout handling
+- Reliable file transfer over UDP
+
+If you are reading this in output.txt, then the file transfer worked correctly.
