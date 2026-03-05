@@ -119,43 +119,50 @@ public class Sender {
     //sending multiple packeets no waiting for accs immediately
     static void goBackN(String fileName) throws Exception {
         List<DSPacket> packets = createPackets(fileName);
-        //chaso engine shuffling to test receiver
-        packets = ChaosEngine.permutePackets(packets);
-
-        int base = 0;
-        int nextSeq = 0;
+    
+        int baseIndex = 0;             // index in packets list
+        int nextIndex = 0;             // index of next packet to send
         int timeoutCount = 0;
-
-        while (base < packets.size()) {
-            //sending pckets as long as were within the windowsize
-            while (nextSeq < base + windowSize && nextSeq < packets.size()) {
-                DSPacket packet = packets.get(nextSeq);
+    
+        int N = windowSize;            // window size
+    
+        while (baseIndex < packets.size()) {
+            // send all packets within window
+            while (nextIndex < packets.size() && nextIndex - baseIndex < N) {
+                DSPacket packet = packets.get(nextIndex);
                 sendPacket(packet);
                 System.out.println("Sent packet " + packet.getSeqNum());
-                nextSeq++;
+                nextIndex++;
             }
-
+    
             try {
                 DSPacket ack = receivePacket();
                 int ackSeq = ack.getSeqNum();
                 System.out.println("ACK received: " + ackSeq);
-
-                //moving past ack packet
-                base = ackSeq + 1;
-                timeoutCount = 0;//reset timeout
-
+    
+                // Find index of acked packet in list
+                int ackIndex = -1;
+                for (int i = baseIndex; i < packets.size(); i++) {
+                    if (packets.get(i).getSeqNum() == ackSeq) {
+                        ackIndex = i;
+                        break;
+                    }
+                }
+    
+                if (ackIndex >= 0) {
+                    baseIndex = ackIndex + 1;
+                    timeoutCount = 0;
+                }
+    
             } catch (SocketTimeoutException e) {
                 timeoutCount++;
-
                 if (timeoutCount >= 3) {
                     System.out.println("Unable to transfer file.");
                     System.exit(0);
                 }
-
+    
                 System.out.println("Timeout -> Resending window");
-
-                //resetting next sqqn to base and resnsidng the whole windw 
-                for (int i = base; i < nextSeq; i++) {
+                for (int i = baseIndex; i < nextIndex; i++) {
                     sendPacket(packets.get(i));
                 }
             }
